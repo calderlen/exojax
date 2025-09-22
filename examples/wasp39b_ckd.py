@@ -13,9 +13,11 @@ config.update("jax_enable_x64", True)
 
 
 # %%
+# loading WASP39b transmission spectrum data
 data = pd.read_csv("data/spectrum_wasp39b_g395h.csv")
 wav_obs = data["wavelength_nm"].values
 rr_obs = data["radius_ratio_rr"].values
-
+#plt.plot(wav_obs, rr_obs, ".",label="observation")
+#plt.show()
 
 # %%

@@ -1,9 +1,10 @@
-"""functions for computation of line shape density (LSD) 
+"""functions for computation of line shape density (LSD)
 
-   * there are both numpy and jnp versions. (np)*** is numpy version.
-   * (np)add(x)D constructs the (x)Dimensional LSD array given the contribution and index.
+* there are both numpy and jnp versions. (np)*** is numpy version.
+* (np)add(x)D constructs the (x)Dimensional LSD array given the contribution and index.
 
 """
+
 import jax.numpy as jnp
 import numpy as np
 from jax import jit
@@ -19,9 +20,9 @@ def add2D(a, w, cx, ix, cy, iy):
     Args:
         a: lineshape density (LSD) array (np.array)
         w: weight (N)
-        cx: given contribution for x 
-        ix: given index for x 
-        cy: given contribution for y 
+        cx: given contribution for x
+        ix: given index for x
+        cy: given contribution for y
         iy: given index for y
 
     Returns:
@@ -41,11 +42,11 @@ def add3D(a, w, cx, ix, cy, iy, cz, iz):
     Args:
         a: lineshape density (LSD) array (np.array)
         w: weight (N)
-        cx: given contribution for x 
-        ix: given index for x 
-        cy: given contribution for y 
+        cx: given contribution for x
+        ix: given index for x
+        cy: given contribution for y
         iy: given index for y
-        cz: given contribution for z 
+        cz: given contribution for z
         iz: given index for z
 
     Returns:
@@ -63,24 +64,15 @@ def add3D(a, w, cx, ix, cy, iy, cz, iz):
     return a
 
 
-def npadd3D_direct1D(a,
-                     w,
-                     cx,
-                     ix,
-                     direct_cy,
-                     direct_iy,
-                     cz,
-                     iz,
-                     sumx=1.0,
-                     sumz=1.0):
+def npadd3D_direct1D(a, w, cx, ix, direct_cy, direct_iy, cz, iz, sumx=1.0, sumz=1.0):
     """numpy version: Add into an array when contirbutions and indices are given (2D+direct).
 
     Args:
         a: lineshape density (LSD) array (np.array)
         w: weight (N)
-        cx: given contribution for x 
-        ix: given index for x 
-        direct_cy: direct contribution for y 
+        cx: given contribution for x
+        ix: given index for x
+        direct_cy: direct contribution for y
         direct_iy: direct index for y
         cz: given contribution for z
         iz: given index for z
@@ -91,7 +83,7 @@ def npadd3D_direct1D(a,
         lineshape density a(nx,ny,nz)
 
     Note:
-        sumx or sumz gives a sum of contribution at point 1 and point 2. 
+        sumx or sumz gives a sum of contribution at point 1 and point 2.
         For the zeroth coeeficient, it should be 1.0
         while it should be 0.0 for the first coefficient.
 
@@ -100,41 +92,32 @@ def npadd3D_direct1D(a,
     conjugate_cx = sumx - cx
     conjugate_cz = sumz - cz
 
-    np.add.at(a, (ix, direct_iy, iz),
-              w * conjugate_cx * direct_cy * conjugate_cz)
+    np.add.at(a, (ix, direct_iy, iz), w * conjugate_cx * direct_cy * conjugate_cz)
     np.add.at(a, (ix + 1, direct_iy, iz), w * cx * direct_cy * conjugate_cz)
     np.add.at(a, (ix, direct_iy, iz + 1), w * conjugate_cx * direct_cy * cz)
     np.add.at(a, (ix + 1, direct_iy, iz + 1), w * cx * direct_cy * cz)
     return a
 
 
-def npadd3D_multi_index(a,
-                        w,
-                        cx,
-                        ix,
-                        cz,
-                        iz,
-                        uidx,
-                        multi_cont_lines,
-                        neighbor_uidx,
-                        sumx=1.0,
-                        sumz=1.0):
-    """ numpy version: Add into an array using multi_index system in y
+def npadd3D_multi_index(
+    a, w, cx, ix, cz, iz, uidx, multi_cont_lines, neighbor_uidx, sumx=1.0, sumz=1.0
+):
+    """numpy version: Add into an array using multi_index system in y
     Args:
         a: lineshape density (LSD) array (np.array)
         w: weight (N)
-        cx: given contribution for x 
-        ix: given index for x 
+        cx: given contribution for x
+        ix: given index for x
         cz: given contribution for z
         iz: given index for z
         sumx: a sum of contribution for x at point 1 and point 2, default=1.0
         sumz: a sum of contribution for z at point 1 and point 2, default=1.0
-    
+
     Returns:
         lineshape density a(nx,ny,nz)
 
     Note:
-        sumx or sumz gives a sum of contribution at point 1 and point 2. 
+        sumx or sumz gives a sum of contribution at point 1 and point 2.
         For the zeroth coeeficient, it should be 1.0
         while it should be 0.0 for the first coefficient.
 
@@ -165,36 +148,34 @@ def npadd3D_multi_index(a,
     direct_iy = neighbor_uidx[uidx, 2]
     direct_cy = np.prod(multi_cont_lines, axis=1)
     a = npadd3D_direct1D(a, w, cx, ix, direct_cy, direct_iy, cz, iz)
-    
+
     print_progress(4, 4, "Making LSD:")
-    
+
     return a
-
-
 
 
 @jit
 def inc3D_givenx(a, w, cx, ix, y, z, xv, yv, zv):
-    """Compute integrated neighbouring contribution for the 3D lineshape distribution (LSD) matrix (memory reduced sum) but using given contribution and index for x .
+    """Compute integrated neighbouring contribution for the 3D lineshape distribution (LSD) matrix (memory reduced sum) but using given contribution and index for x.
 
     Args:
         a: lineshape density (LSD) array (jnp.array)
         w: weight (N)
-        cx: given contribution for x 
-        ix: given index for x 
+        cx: given contribution for x
+        ix: given index for x
         y: y values (N)
         z: z values (N)
         xv: x grid
         yv: y grid
-        zv: z grid            
+        zv: z grid
 
     Returns:
         lineshape distribution matrix (integrated neighbouring contribution for 3D)
 
     Note:
-        This function computes \sum_n w_n fx_n \otimes fy_n \otimes fz_n, 
-        where w_n is the weight, fx_n, fy_n, and fz_n are the n-th NCFs for 1D. 
-        A direct sum uses huge RAM. 
+        This function computes \sum_n w_n fx_n \otimes fy_n \otimes fz_n,
+        where w_n is the weight, fx_n, fy_n, and fz_n are the n-th NCFs for 1D.
+        A direct sum uses huge RAM.
 
     """
     cy, iy = getix(y, yv)
@@ -205,13 +186,13 @@ def inc3D_givenx(a, w, cx, ix, y, z, xv, yv, zv):
 
 @jit
 def inc2D_givenx(a, w, cx, ix, y, yv):
-    """Compute integrated neighbouring contribution for 2D LSD (memory reduced sum) but using given contribution and index for x .
+    """Compute integrated neighbouring contribution for 2D LSD (memory reduced sum) but using given contribution and index for x.
 
     Args:
         a: lineshape density (LSD) array (jnp.array)
         w: weight (N)
-        cx: given contribution for x 
-        ix: given index for x 
+        cx: given contribution for x
+        ix: given index for x
         y: y values (N)
         yv: y grid
 
@@ -219,9 +200,9 @@ def inc2D_givenx(a, w, cx, ix, y, yv):
         lineshape distribution matrix (integrated neighbouring contribution for 2D)
 
     Note:
-        This function computes \sum_n w_n fx_n \otimes fy_n, 
-        where w_n is the weight, fx_n, fy_n,  are the n-th NCFs for 1D. 
-        A direct sum uses huge RAM. 
+        This function computes \sum_n w_n fx_n \otimes fy_n,
+        where w_n is the weight, fx_n, fy_n,  are the n-th NCFs for 1D.
+        A direct sum uses huge RAM.
 
     """
     cy, iy = getix(y, yv)

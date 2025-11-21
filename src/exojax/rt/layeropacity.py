@@ -58,8 +58,19 @@ def layer_optical_depth_ckd(dParr, xstensor_ckd, mixing_ratio, mass, gravity):
     Returns:
         3D array: optical depth tensor, dtau_ckd [N_layer, N_g, N_bands]
     """
+    gravity = jnp.asarray(gravity)
+    if gravity.ndim < xstensor_ckd.ndim:
+        gravity = gravity.reshape(
+            gravity.shape + (1,) * (xstensor_ckd.ndim - gravity.ndim)
+        )
 
-    return opacity_factor * xstensor_ckd * dParr[:, None, None] * mixing_ratio[:, None, None] / (mass * gravity)
+    return (
+        opacity_factor
+        * xstensor_ckd
+        * dParr[:, None, None]
+        * mixing_ratio[:, None, None]
+        / (mass * gravity)
+    )
 
 
 def single_layer_optical_depth_CIA(

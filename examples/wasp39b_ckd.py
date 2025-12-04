@@ -98,7 +98,6 @@ def setup_ckd(base_opa: OpaPremodit, Tarr: np.ndarray, pressure: np.ndarray) -> 
         return OpaCKD.from_saved_tables(CKD_CACHE, base_opa=base_opa)
 
     print("Precomputing CKD tables … this may take a few minutes on the first run")
-    exit()
     opa_ckd = OpaCKD(base_opa, Ng=16, band_width=5.0, band_spacing="linear")
     T_grid = np.linspace(Tarr.min(), Tarr.max(), 12)
     P_grid = np.geomspace(pressure.min(), pressure.max(), 12)
@@ -115,11 +114,12 @@ def main(lbl_compute=False) -> None:
 
     temperature_profile = np.linspace(950.0, 1250.0, art.nlayer)
     mmw_profile = np.full(art.nlayer, 2.3)
-    mmr_h2o = np.full(art.nlayer, 5.0e-4)
+    mmr_h2o = np.full(art.nlayer,1.e-3)
 
     radius_btm = PLANET_RADIUS_RJ * RJ
     stellar_radius = STELLAR_RADIUS_RS * Rs
-    gravity_btm = gravity_jupiter(PLANET_MASS_MJ, PLANET_RADIUS_RJ)
+    gravity_btm = gravity_jupiter(PLANET_RADIUS_RJ, PLANET_MASS_MJ)
+        
     gravity_profile = np.asarray(
         art.gravity_profile(temperature_profile, mmw_profile, radius_btm, gravity_btm)
     )
@@ -229,7 +229,7 @@ def main(lbl_compute=False) -> None:
     print(f"Saved spectrum figure to {FIG_SPECTRUM}")
 
     if lbl_compute:
-        diff_ppm = (radius_ratio_ckd - radius_ratio_avg) * 1e6
+    
         plt.figure(figsize=(10, 3.5))
         plt.axhline(0.0, color="0.7", linestyle="--", linewidth=1.0)
         plt.plot(wav_ckd_um[order_ckd], diff_ppm[order_ckd], color="tab:red", linewidth=1.2)
